@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zubair Works Space</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    /* Reset & Global Styles */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Roboto', sans-serif; background: #f7f7f7; color: #333; min-height: 100vh; }
+    /* Header */
+    header { background: linear-gradient(135deg, #4e54c8, #8f94fb); padding: 20px; text-align: center; color: #fff; }
+    /* Container */
+    .container { max-width: 1200px; margin: auto; padding: 20px; }
+    /* Top Controls */
+    .top-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
+    button { background: #4e54c8; color: #fff; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; transition: background 0.3s ease; }
+    button:hover { background: #3c44a0; }
+    /* Filter Area */
+    .filter-area { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .filter-area label { font-weight: 500; margin-bottom: 5px; display: block; }
+    .filter-area input, .filter-area select { border: 1px solid #ccc; border-radius: 4px; padding: 6px 10px; }
+    /* Advanced Filter */
+    .advanced-filter-toggle { background: #3c44a0; padding: 8px 14px; border-radius: 4px; color: #fff; cursor: pointer; }
+    .advanced-filter { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-top: 10px; margin-bottom: 20px; display: none; flex-wrap: wrap; gap: 10px; }
+    .advanced-filter.active { display: flex; }
+    .advanced-filter > div { display: flex; flex-direction: column; }
+    /* Modal Styles */
+    .modal {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: flex; justify-content: center; align-items: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1000;
+    }
+    .modal.show { opacity: 1; pointer-events: auto; }
+    .modal-content {
+      background: #fff; width: 90%; max-width: 500px; border-radius: 8px; padding: 20px;
+      position: relative; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    /* ***** নতুন: Data Entry Modal কে স্ক্রলযোগ্য করতে ***** */
+    #dataModal .modal-content {
+      max-height: 90vh; 
+      overflow-y: auto;
+    }
+    /* Modify Modal: scrollable */
+    .modify-modal .modal-content { max-width: 80vw; max-height: 80vh; overflow: auto; }
+    .modal-content h2 { margin-bottom: 15px; text-align: center; }
+    .modal-content .close { position: absolute; top: 10px; right: 10px; font-size: 24px; cursor: pointer; color: #888; }
+    .modal-content .close:hover { color: #333; }
+    .modal-loading { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: flex; justify-content: center; align-items: center; z-index: 10; }
+    form label { margin-top: 10px; display: block; font-weight: 500; }
+    form input, form textarea { width: 100%; margin-top: 5px; margin-bottom: 10px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    /* Photo Input Wrapper */
+    .photo-input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .mobile-only { display: none; }
+    @media (max-width: 767px) { .mobile-only { display: block; } }
+    /* Table Styles */
+    .table-container { background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 800px; }
+    table thead tr { background: linear-gradient(135deg, #4e54c8, #8f94fb); color: #fff; }
+    table th, table td { padding: 12px 15px; border: 1px solid black; text-align: left; vertical-align: middle; }
+    table tbody tr:nth-child(even) { background: #f9f9f9; }
+    table tbody tr:hover { background: #f1f1f1; }
+    table img { border-radius: 4px; cursor: pointer; }
+    /* Action Icon in Modify Modal's Results */
+    .action-icon { cursor: pointer; font-size: 20px; }
+    /* Nested Action Modal inside Modify Modal */
+    .nested-modal {
+      position: absolute; top: 10%; left: 50%; transform: translateX(-50%);
+      z-index: 1100; display: none;
+    }
+    .nested-modal.show { display: block; }
+    /* Global Loading Overlay */
+    .loading-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(255,255,255,0.7);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+    }
+    .loading-overlay.show { opacity: 1; pointer-events: auto; }
+    .spinner { width: 40px; height: 40px; border: 4px solid #ccc; border-top: 4px solid #4e54c8; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    /* Photo Modal with Zoom & Pan */
+    .photo-modal { 
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+      background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; 
+      opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 2000; 
+    }
+    .photo-modal.show { opacity: 1; pointer-events: auto; }
+    .photo-modal-content { position: relative; max-width: 90%; max-height: 90%; }
+    .photo-modal-content img { width: 100%; height: auto; border-radius: 4px; display: block; transition: transform 0.2s ease; }
+    .photo-modal .close-photo { position: absolute; top: -40px; right: 0; color: #fff; font-size: 30px; cursor: pointer; }
+    #photoSpinner { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; }
+    /* Footer */
+    footer { text-align: center; padding: 10px; background: #333; color: #fff; margin-top: 20px; }
+    /* Toast Message */
+    .toast { position: fixed; top: 10px; right: 10px; background: #4e54c8; color: #fff; padding: 10px 15px; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); opacity: 0; transform: translateY(-20px); transition: opacity 0.3s, transform 0.3s; z-index: 3000; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    .toast.error { background: #d9534f; }
+    /* Print: Only table prints */
+    @media print {
+      body * { visibility: hidden; }
+      .table-container, .table-container * { visibility: visible; }
+      .table-container { position: absolute; left: 0; top: 0; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Zubair Works Space</h1>
+  </header>
+  
+  <!-- Global Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+  
+  <div class="container">
+    <!-- Top Controls -->
+    <div class="top-controls">
+      <button id="openModalBtn">ডেটা এন্ট্রি করুন</button>
+      <button id="modifyBtn">মডিফাই করুন</button>
+      <button id="printBtn">প্রিন্ট করুন</button>
+    </div>
+    <!-- Filter Area -->
+    <div class="filter-area">
+      <div>
+        <label for="filterOrderNo">অর্ডার নং</label>
+        <input type="text" id="filterOrderNo" placeholder="অর্ডার নং">
+      </div>
+      <div>
+        <button class="advanced-filter-toggle" id="toggleFilterBtn">অ্যাডভান্সড ফিল্টার</button>
+      </div>
+    </div>
+    <!-- Advanced Filter Collapsible -->
+    <div class="advanced-filter" id="advancedFilterSection">
+      <div>
+        <label for="filterDate">তারিখ</label>
+        <input type="date" id="filterDate">
+      </div>
+      <div>
+        <label for="filterMonth">মাস</label>
+        <select id="filterMonth">
+          <option value="">-- নির্বাচন করুন --</option>
+          <option value="01">জানুয়ারি</option>
+          <option value="02">ফেব্রুয়ারি</option>
+          <option value="03">মার্চ</option>
+          <option value="04">এপ্রিল</option>
+          <option value="05">মে</option>
+          <option value="06">জুন</option>
+          <option value="07">জুলাই</option>
+          <option value="08">আগস্ট</option>
+          <option value="09">সেপ্টেম্বর</option>
+          <option value="10">অক্টোবর</option>
+          <option value="11">নভেম্বর</option>
+          <option value="12">ডিসেম্বর</option>
+        </select>
+      </div>
+      <div>
+        <label for="filterYear">বছর</label>
+        <input type="number" id="filterYear" placeholder="বছর (যেমন: 2025)">
+      </div>
+    </div>
+    <!-- Main Data Table (No Action Column) -->
+    <div class="table-container">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th>তারিখ</th>
+            <th>অর্ডার নং</th>
+            <th>পার্টি নাম</th>
+            <th>সেড নং</th>
+            <th>কালার নাম</th>
+            <th>কাউন্ট & QTY</th>
+            <th>রেমার্কস</th>
+            <th>ফটো</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Data loaded via JavaScript -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <!-- Data Entry Modal -->
+  <div id="dataModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <div id="modalLoading" class="modal-loading" style="display:none;">
+        <div class="spinner"></div>
+      </div>
+      <h2 id="modalTitle">ডেটা এন্ট্রি ফর্ম</h2>
+      <form id="entryForm">
+        <input type="hidden" id="entryId" name="entryId" value="">
+        
+        <label for="date">তারিখ:</label>
+        <input type="date" id="date" name="date" required>
+
+        <label for="orderNo">অর্ডার নং:</label>
+        <input type="text" id="orderNo" name="orderNo" required>
+
+        <label for="partyName">পার্টি নাম:</label>
+        <input type="text" id="partyName" name="partyName" required>
+
+        <label for="seedNo">সেড নং (টেক্সট ও নম্বর মিশিয়ে):</label>
+        <input type="text" id="seedNo" name="seedNo" required>
+
+        <label for="colorName">কালার নাম:</label>
+        <input type="text" id="colorName" name="colorName" required>
+
+        <!-- নতুন: ১, ২, ৩ কাউন্ট রেডিও -->
+        <div style="margin-top:10px;">
+          <label>কাউন্ট কতটি নির্বাচন করবেন?</label><br>
+          <input type="radio" name="countRadio" value="1" id="count1Radio">
+          <label for="count1Radio">১ কাউন্ট</label>
+          <input type="radio" name="countRadio" value="2" id="count2Radio">
+          <label for="count2Radio">২ কাউন্ট</label>
+          <input type="radio" name="countRadio" value="3" id="count3Radio">
+          <label for="count3Radio">৩ কাউন্ট</label>
+        </div>
+
+        <!-- ডায়নামিক ইনপুট রো, শুরুতে লুকানো -->
+        <div id="countRows" style="margin:10px 0;">
+          <!-- ১ম রো -->
+          <div id="row1" style="display:none; margin-bottom:5px;">
+            <label>Count (১):</label>
+            <input type="text" id="countVal1" placeholder="যেমন: 20/2" />
+            <label>QTY:</label>
+            <input type="number" id="qty1" min="0" />
+          </div>
+          <!-- ২য় রো -->
+          <div id="row2" style="display:none; margin-bottom:5px;">
+            <label>Count (২):</label>
+            <input type="text" id="countVal2" placeholder="যেমন: 30/2" />
+            <label>QTY:</label>
+            <input type="number" id="qty2" min="0" />
+          </div>
+          <!-- ৩য় রো -->
+          <div id="row3" style="display:none; margin-bottom:5px;">
+            <label>Count (৩):</label>
+            <input type="text" id="countVal3" placeholder="যেমন: 40/2" />
+            <label>QTY:</label>
+            <input type="number" id="qty3" min="0" />
+          </div>
+        </div>
+
+        <label for="remarks">রেমার্কস:</label>
+        <textarea id="remarks" name="remarks"></textarea>
+        
+        <!-- Photo Input Wrapper -->
+        <div class="photo-input-wrapper">
+          <div class="mobile-only">
+            <button type="button" id="cameraBtn" title="ক্যামেরা থেকে ছবি তুলুন">📷</button>
+            <input type="file" id="photoCamera" name="photoCamera" accept="image/*" capture="environment" style="display: none;">
+          </div>
+          <label for="photoFile">ফটো (ফাইল নির্বাচন):</label>
+          <input type="file" id="photoFile" name="photoFile" accept="image/*">
+        </div>
+        <button type="submit" id="submitBtn">সেভ করুন</button>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Photo Preview Modal with Zoom, Pan & Limited Zoom-Out -->
+  <div id="photoModal" class="photo-modal">
+    <div class="photo-modal-content">
+      <span id="closePhotoModal" class="close-photo">&times;</span>
+      <div id="photoSpinner">
+        <div class="spinner"></div>
+      </div>
+      <img id="modalImg" src="" alt="Full View">
+    </div>
+  </div>
+  
+  <!-- Modify Modal with Nested Action Modal -->
+  <div id="modifyModal" class="modal modify-modal">
+    <!-- Modify Modal Content -->
+    <div class="modal-content" id="modifyModalContent">
+      <span class="close" id="closeModifyModal">&times;</span>
+      <h2>মডিফাই</h2>
+      <label for="modifyOrderNo">অর্ডার নং সার্চ করুন:</label>
+      <input type="text" id="modifyOrderNo" placeholder="অর্ডার নং">
+      <button id="searchOrderBtn">সার্চ করুন</button>
+      <div id="modifyResults" style="margin-top:15px;"></div>
+    </div>
+    <!-- Nested Action Modal (appears on top of Modify Modal) -->
+    <div id="actionModal" class="nested-modal">
+      <div class="modal-content">
+        <span class="close" id="closeActionModal">&times;</span>
+        <h2>অ্যাকশন নির্বাচন করুন</h2>
+        <button id="actionEditBtn">এডিট</button>
+        <button id="actionDeleteBtn" style="background:#d9534f">ডিলেট</button>
+      </div>
+    </div>
+  </div>
+  
+  <footer>
+    <p>© Zubair</p>
+  </footer>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    // Supabase Configuration
+    const SUPABASE_URL = "https://rabjyhlinntzbnbqbmad.supabase.co"; // আপনার Supabase URL
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhYmp5aGxpbm50emJuYnFibWFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzNzg2NDAsImV4cCI6MjA1NTk1NDY0MH0.19NyAvpxbG5czIyLmPiRQ26X3R_Wo_cqTurGIUf3hmQ"; // আপনার ANON KEY
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    // Elements & Variables
+    const modal = document.getElementById("dataModal");
+    const openModalBtn = document.getElementById("openModalBtn");
+    const closeModalBtn = document.querySelector("#dataModal .close");
+    const entryForm = document.getElementById("entryForm");
+    const modalTitle = document.getElementById("modalTitle");
+    const submitBtn = document.getElementById("submitBtn");
+    const entryIdField = document.getElementById("entryId");
+    const loadingOverlay = document.getElementById("loadingOverlay");
+    const modalLoading = document.getElementById("modalLoading");
+    const photoModal = document.getElementById("photoModal");
+    const closePhotoModal = document.getElementById("closePhotoModal");
+    const modalImg = document.getElementById("modalImg");
+    const photoSpinner = document.getElementById("photoSpinner");
+    const filterDate = document.getElementById("filterDate");
+    const filterMonth = document.getElementById("filterMonth");
+    const filterYear = document.getElementById("filterYear");
+    const filterOrderNo = document.getElementById("filterOrderNo");
+    const toggleFilterBtn = document.getElementById("toggleFilterBtn");
+    let isFilterOpen = false;
+
+    // রেডিও + ডাইনামিক রো
+    const count1Radio = document.getElementById("count1Radio");
+    const count2Radio = document.getElementById("count2Radio");
+    const count3Radio = document.getElementById("count3Radio");
+    const row1 = document.getElementById("row1");
+    const row2 = document.getElementById("row2");
+    const row3 = document.getElementById("row3");
+
+    // Advanced Filter Toggle
+    const advancedFilterSection = document.getElementById("advancedFilterSection");
+    toggleFilterBtn.addEventListener("click", () => {
+      isFilterOpen = !isFilterOpen;
+      advancedFilterSection.classList.toggle("active", isFilterOpen);
+    });
+
+    // Data Entry Modal Handling
+    openModalBtn.addEventListener("click", () => {
+      setFormMode("new");
+      modal.classList.add("show");
+    });
+    closeModalBtn.addEventListener("click", () => { modal.classList.remove("show"); });
+    window.addEventListener("click", (e) => { if (e.target === modal) { modal.classList.remove("show"); } });
+    
+    // Print Functionality (Only Table)
+    document.getElementById("printBtn").addEventListener("click", () => { window.print(); });
+    
+    // Toast Message Function
+    function showToast(message, type="success") {
+      const toast = document.createElement("div");
+      toast.classList.add("toast");
+      if(type === "error") { toast.classList.add("error"); }
+      toast.innerText = message;
+      document.body.appendChild(toast);
+      setTimeout(() => { toast.classList.add("show"); }, 100);
+      setTimeout(() => { toast.classList.remove("show"); setTimeout(() => { toast.remove(); }, 300); }, 3000);
+    }
+    
+    // Global Loading Overlay Functions
+    function showLoading() { loadingOverlay.classList.add("show"); }
+    function hideLoading() { loadingOverlay.classList.remove("show"); }
+    
+    // Modal Loading Functions
+    function showModalLoading() { modalLoading.style.display = "flex"; }
+    function hideModalLoading() { modalLoading.style.display = "none"; }
+    
+    // Debounce Function
+    function debounce(func, delay) {
+      let timeout;
+      return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+      }
+    }
+    
+    // রেডিও বাটন চেঞ্জ হলে row দেখানো/লুকানো
+    document.querySelectorAll('input[name="countRadio"]').forEach(radio => {
+      radio.addEventListener("change", (e) => {
+        const val = e.target.value;
+        row1.style.display = "none";
+        row2.style.display = "none";
+        row3.style.display = "none";
+        if(val === "1") { row1.style.display = "block"; }
+        else if(val === "2") { row1.style.display = "block"; row2.style.display = "block"; }
+        else if(val === "3") { row1.style.display = "block"; row2.style.display = "block"; row3.style.display = "block"; }
+      });
+    });
+    
+    // Image Upload Function
+    async function uploadImage(file) {
+      try {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substr(2, 9)}_${Date.now()}.${fileExt}`;
+        const { data, error: uploadError } = await supabaseClient.storage.from('photos').upload(fileName, file);
+        if (uploadError) throw uploadError;
+        const { data: { publicUrl } } = await supabaseClient.storage.from('photos').getPublicUrl(data.path);
+        return publicUrl;
+      } catch (error) {
+        console.error('Upload error:', error);
+        showToast(`ফটো আপলোড ব্যর্থ: ${error.message}`, "error");
+        return null;
+      }
+    }
+    
+    // Form Submission (Insert or Update)
+    entryForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      showModalLoading();
+      const idVal = entryIdField.value;
+      const dateVal = document.getElementById("date").value;
+      const orderNoVal = document.getElementById("orderNo").value;
+      const partyNameVal = document.getElementById("partyName").value;
+      const seedNoVal = document.getElementById("seedNo").value;
+      const colorNameVal = document.getElementById("colorName").value;
+      const remarksVal = document.getElementById("remarks").value;
+      
+      const photoCameraFile = document.getElementById("photoCamera").files[0];
+      const photoFileInput = document.getElementById("photoFile").files[0];
+      const selectedFile = photoCameraFile || photoFileInput;
+      let photoUrl = null;
+      if (selectedFile) {
+        photoUrl = await uploadImage(selectedFile);
+        if (!photoUrl) { hideModalLoading(); return; }
+      }
+      
+      let selectedCountRadio = document.querySelector('input[name="countRadio"]:checked');
+      if(!selectedCountRadio) {
+        hideModalLoading();
+        showToast("কাউন্ট কতটি হবে, নির্বাচন করুন!", "error");
+        return;
+      }
+      let selectedCount = parseInt(selectedCountRadio.value, 10);
+      
+      let countsData = [];
+      if(selectedCount >= 1) {
+        const c1 = document.getElementById("countVal1").value;
+        const q1 = document.getElementById("qty1").value;
+        countsData.push({ count: c1, qty: q1 });
+      }
+      if(selectedCount >= 2) {
+        const c2 = document.getElementById("countVal2").value;
+        const q2 = document.getElementById("qty2").value;
+        countsData.push({ count: c2, qty: q2 });
+      }
+      if(selectedCount >= 3) {
+        const c3 = document.getElementById("countVal3").value;
+        const q3 = document.getElementById("qty3").value;
+        countsData.push({ count: c3, qty: q3 });
+      }
+      
+      let error;
+      if(!idVal) {
+        ({ error } = await supabaseClient.from('data_entries').insert([{
+           date: dateVal,
+           order_no: orderNoVal,
+           party_name: partyNameVal,
+           seed_no: seedNoVal,
+           color_name: colorNameVal,
+           remarks: remarksVal,
+           photo_url: photoUrl,
+           counts_data: countsData
+        }]));
+      } else {
+        let updateData = {
+           date: dateVal,
+           order_no: orderNoVal,
+           party_name: partyNameVal,
+           seed_no: seedNoVal,
+           color_name: colorNameVal,
+           remarks: remarksVal,
+           counts_data: countsData
+        };
+        if(photoUrl) { updateData.photo_url = photoUrl; }
+        ({ error } = await supabaseClient.from('data_entries').update(updateData).eq('id', idVal));
+      }
+      hideModalLoading();
+      if (error) {
+        showToast("ডেটা সংরক্ষণে সমস্যা: " + error.message, "error");
+      } else {
+        showToast("ডেটা সফলভাবে সংরক্ষণ হয়েছে");
+        modal.classList.remove("show");
+        entryForm.reset();
+        resetCountRows();
+        loadData();
+      }
+    });
+    
+    function resetCountRows() {
+      document.querySelectorAll('input[name="countRadio"]').forEach(r => r.checked = false);
+      row1.style.display = "none";
+      row2.style.display = "none";
+      row3.style.display = "none";
+      document.getElementById("countVal1").value = "";
+      document.getElementById("qty1").value = "";
+      document.getElementById("countVal2").value = "";
+      document.getElementById("qty2").value = "";
+      document.getElementById("countVal3").value = "";
+      document.getElementById("qty3").value = "";
+    }
+    
+    function setFormMode(mode, entry=null) {
+      if(mode === "new") {
+        modalTitle.innerText = "ডেটা এন্ট্রি ফর্ম";
+        submitBtn.innerText = "সেভ করুন";
+        entryIdField.value = "";
+        entryForm.reset();
+        resetCountRows();
+      } else if(mode === "edit" && entry) {
+        modalTitle.innerText = "ডেটা এডিট ফর্ম";
+        submitBtn.innerText = "আপডেট করুন";
+        entryIdField.value = entry.id || "
